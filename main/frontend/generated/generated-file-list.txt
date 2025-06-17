@@ -1,4 +1,5 @@
 AlbumServices.ts
+ArtistaBandaServices.ts
 ArtistaService.ts
 BandaService.ts
 CancionServices.ts
@@ -6,7 +7,7 @@ GeneroServices.ts
 TaskService.ts
 com/vaadin/hilla/mappedtypes/Pageable.ts
 com/practica2/base/models/Artista.ts
-com/practica2/base/models/Banda.ts
+com/practica2/base/models/Genero.ts
 com/practica2/taskmanagement/domain/Task.ts
 com/vaadin/hilla/mappedtypes/Sort.ts
 com/practica2/base/domain/AbstractEntity.ts
@@ -17,7 +18,7 @@ connect-client.default.ts
 endpoints.ts
 com/vaadin/hilla/mappedtypes/PageableModel.ts
 com/practica2/base/models/ArtistaModel.ts
-com/practica2/base/models/BandaModel.ts
+com/practica2/base/models/GeneroModel.ts
 com/practica2/taskmanagement/domain/TaskModel.ts
 com/vaadin/hilla/mappedtypes/SortModel.ts
 com/practica2/base/domain/AbstractEntityModel.ts

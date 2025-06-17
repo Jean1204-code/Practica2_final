@@ -1,6 +1,6 @@
 interface Artista {
     id?: number;
     nombres?: string;
-    nacionidad?: string;
+    nacionalidad?: string;
 }
 export default Artista;

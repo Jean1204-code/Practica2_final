@@ -45,24 +45,4 @@ public class DaoBanda extends AdapterDao<Banda> {
             // TODO: handle exception
         }
     }
-
-    public static void main(String[] args) {
-        DaoBanda da = new DaoBanda();
-        da.getObj().setId(da.listAll().getLength() + 1);
-        da.getObj().setNombre("Molotov");
-        da.getObj().setFecha(new Date());
-        if (da.save())
-            System.out.println("GUARDADO");
-        else
-            System.out.println("Hubo un error");
-        da.setObj(null);
-        da.getObj().setId(da.listAll().getLength() + 1);
-        da.getObj().setNombre("Angeles del infierno");
-        da.getObj().setFecha(new Date());
-        if (da.save())
-            System.out.println("GUARDADO");
-        else
-            System.out.println("Hubo un error");
-    }
-
 }

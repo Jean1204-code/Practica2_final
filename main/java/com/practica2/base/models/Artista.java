@@ -3,7 +3,7 @@ package com.practica2.base.models;
 public class Artista {
     private Integer id;
     private String nombres;
-    private String nacionidad;
+    private String nacionalidad;
 
     public Integer getId() {
         return this.id;
@@ -21,12 +21,12 @@ public class Artista {
         this.nombres = nombres;
     }
 
-    public String getNacionidad() {
-        return this.nacionidad;
+    public String getNacionalidad() {
+        return this.nacionalidad;
     }
 
-    public void setNacionidad(String nacionidad) {
-        this.nacionidad = nacionidad;
+    public void setNacionalidad(String nacionalidad) { 
+        this.nacionalidad = nacionalidad;
     }
 
 }

@@ -15,6 +15,17 @@
         "title": "Main"
       },
       {
+        "route": "Album-list",
+        "title": "Album",
+        "menu": {
+          "icon": "vaadin:clipboard-check",
+          "order": 4,
+          "title": "Album"
+        },
+        "flowLayout": false,
+        "params": {}
+      },
+      {
         "route": "artista-list",
         "title": "Artistas",
         "menu": {
@@ -38,11 +49,22 @@
       },
       {
         "route": "Cancion-list",
-        "title": "Cancion",
+        "title": "Canciones",
         "menu": {
           "icon": "vaadin:clipboard-check",
-          "order": 1,
-          "title": "Cancion"
+          "order": 2,
+          "title": "Canciones"
+        },
+        "flowLayout": false,
+        "params": {}
+      },
+      {
+        "route": "Genero-list",
+        "title": "Generos",
+        "menu": {
+          "icon": "vaadin:clipboard-check",
+          "order": 3,
+          "title": "Generos"
         },
         "flowLayout": false,
         "params": {}

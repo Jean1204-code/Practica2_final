@@ -1,98 +1,108 @@
 import { ViewConfig } from '@vaadin/hilla-file-router/types.js';
-import { Button, ComboBox, DatePicker, Dialog, Grid, GridColumn, GridItemModel, NumberField, TextField, VerticalLayout } from '@vaadin/react-components';
+import { Button, ComboBox, Dialog, Grid, GridColumn, GridItemModel, NumberField, TextField, VerticalLayout, HorizontalLayout, Icon, Select } from '@vaadin/react-components';
 import { Notification } from '@vaadin/react-components/Notification';
-import { ArtistaService, CancionServices, TaskService } from 'Frontend/generated/endpoints';
+import { CancionServices } from 'Frontend/generated/endpoints';
 import { useSignal } from '@vaadin/hilla-react-signals';
 import handleError from 'Frontend/views/_ErrorHandler';
 import { Group, ViewToolbar } from 'Frontend/components/ViewToolbar';
 
 import { useDataProvider } from '@vaadin/hilla-react-crud';
-import Artista from 'Frontend/generated/com/practica2/base/models/Artista';
-import { useCallback, useEffect, useState } from 'react';
+import Cancion from 'Frontend/generated/com/practica2/base/models/Cancion';
+import { useEffect, useState } from 'react';
+
+import { GridSortColumn, GridSortColumnDirectionChangedEvent } from '@vaadin/react-components/GridSortColumn';
 
 export const config: ViewConfig = {
-  title: 'Cancion',
+  title: 'Canciones',
   menu: {
     icon: 'vaadin:clipboard-check',
-    order: 1,
-    title: 'Cancion',
+    order: 2,
+    title: 'Canciones',
   },
 };
 
-
-type ArtistaEntryFormProps = {
-  onArtistaCreated?: () => void;
+type CancionEntryFormProps = {
+  onCancionCreated?: () => void;
 };
 
-type ArtistaEntryFormPropsUpdate = ()=> {
-  onArtistaUpdated?: () => void;
-};
-//GUARDAR ARTISTA
-function ArtistaEntryForm(props: ArtistaEntryFormProps) {
+function CancionEntryForm(props: CancionEntryFormProps) {
   const nombre = useSignal('');
   const genero = useSignal('');
   const album = useSignal('');
-  const duracion = useSignal('');
+  const duracion = useSignal<string>('');
   const url = useSignal('');
   const tipo = useSignal('');
-  const createArtista = async () => {
+
+  const dialogOpened = useSignal(false);
+
+  const createCancion = async () => {
     try {
-      if (nombre.value.trim().length > 0 && genero.value.trim().length > 0) {
-        const id_genero = parseInt(genero.value) +1;
-        const id_album = parseInt(album.value) +1;
-        await CancionServices.create(nombre.value, id_genero, parseInt(duracion.value), url.value, tipo.value, id_album);
-        if (props.onArtistaCreated) {
-          props.onArtistaCreated();
-        }
-       
-        nombre.value = '';
-        genero.value = '';
-        album.value = '';
-        duracion.value = '';
-        url.value = '';
-        tipo.value = '';
-        dialogOpened.value = false;
-        Notification.show('Cancion creado', { duration: 5000, position: 'bottom-end', theme: 'success' });
-      } else {
-        Notification.show('No se pudo crear, faltan datos', { duration: 5000, position: 'top-center', theme: 'error' });
+      const idGeneroNum = parseInt(genero.value || '0');
+      const idAlbumNum = parseInt(album.value || '0');
+      const duracionNum = parseInt(duracion.value || '0');
+
+      await CancionServices.create(
+        nombre.value,
+        idGeneroNum,
+        duracionNum,
+        url.value,
+        tipo.value,
+        idAlbumNum
+      );
+
+      if (props.onCancionCreated) {
+        props.onCancionCreated();
       }
 
-    } catch (error) {
+      nombre.value = '';
+      genero.value = '';
+      album.value = '';
+      duracion.value = '';
+      url.value = '';
+      tipo.value = '';
+      dialogOpened.value = false;
+      Notification.show('Cancion creada con exito', { duration: 5000, position: 'bottom-end', theme: 'success' });
+
+    } catch (error: unknown) {
       console.log(error);
       handleError(error);
+      Notification.show((error as Error)?.message || 'Error desconocido al crear la cancion', { duration: 5000, position: 'top-center', theme: 'error' });
     }
   };
-  
-  let listaGenero = useSignal<String[]>([]);
+
+  const listaGenero = useSignal<{ label: string, value: string }[]>([]);
   useEffect(() => {
-    CancionServices.listaAlbumGenero().then(data =>
-      //console.log(data)
-      listaGenero.value = (data ?? []).filter((item): item is Record<string, unknown> => item !== undefined)
-        .map(item => String(item?.nombre ?? ''))
-    );
-  }, []);
-  let listaAlbum = useSignal<String[]>([]);
-  useEffect(() => {
-    CancionServices.listaAlbumCombo().then(data =>
-      //console.log(data)
-      listaAlbum.value = (data ?? []).filter((item): item is Record<string, unknown> => item !== undefined)
-        .map(item => String(item?.nombre ?? ''))
-    );
+    CancionServices.listGeneroCombo().then(data => {
+      listaGenero.value = (data ?? []).map(item => ({
+        label: String(item?.label ?? ''),
+        value: String(item?.value ?? '')
+      }));
+    });
   }, []);
 
-  let listaTipo = useSignal<String[]>([]);
+  const listaAlbum = useSignal<{ label: string, value: string }[]>([]);
+  useEffect(() => {
+    CancionServices.listAlbumCombo().then(data => {
+      listaAlbum.value = (data ?? []).map(item => ({
+        label: String(item?.label ?? ''),
+        value: String(item?.value ?? '')
+      }));
+    });
+  }, []);
+
+  const listaTipo = useSignal<string[]>([]);
   useEffect(() => {
     CancionServices.listTipo().then(data =>
-      //console.log(data)
       listaTipo.value = (data ?? []).filter((item): item is string => typeof item === 'string')
     );
   }, []);
-  const dialogOpened = useSignal(false);
+
+
   return (
     <>
       <Dialog
         modeless
-        headerTitle="Nuevo artista"
+        headerTitle="Nueva Cancion"
         opened={dialogOpened.value}
         onOpenedChanged={({ detail }) => {
           dialogOpened.value = detail.value;
@@ -104,110 +114,154 @@ function ArtistaEntryForm(props: ArtistaEntryFormProps) {
                 dialogOpened.value = false;
               }}
             >
-              Candelar
+              Cancelar
             </Button>
-            <Button onClick={createArtista} theme="primary">
+            <Button onClick={createCancion} theme="primary">
               Registrar
             </Button>
-            
           </>
         }
       >
         <VerticalLayout style={{ alignItems: 'stretch', width: '18rem', maxWidth: '100%' }}>
-          <TextField label="Nombre del cancion" 
+          <TextField label="Nombre de la cancion"
             placeholder="Ingrese el nombre de la cancion"
-            aria-label="Nombre del cancion"
+            aria-label="Nombre de la cancion"
             value={nombre.value}
             onValueChanged={(evt) => (nombre.value = evt.detail.value)}
           />
-          <ComboBox label="Genero" 
+          <ComboBox label="Genero"
             items={listaGenero.value}
             placeholder='Seleccione un genero'
-            aria-label='Seleccione un genero de la lista'
+            itemLabelPath="label"
+            itemValuePath="value"
             value={genero.value}
             onValueChanged={(evt) => (genero.value = evt.detail.value)}
-            />
-            <ComboBox label="Album" 
+          />
+          <ComboBox label="Album"
             items={listaAlbum.value}
             placeholder='Seleccione un album'
-            aria-label='Seleccione un album de la lista'
+            itemLabelPath="label"
+            itemValuePath="value"
             value={album.value}
             onValueChanged={(evt) => (album.value = evt.detail.value)}
-            />
-            <ComboBox label="Tipo" 
+          />
+          <ComboBox label="Tipo"
             items={listaTipo.value}
             placeholder='Seleccione un tipo de archivo'
-            aria-label='Seleccione un tipo de archivo de la lista'
             value={tipo.value}
             onValueChanged={(evt) => (tipo.value = evt.detail.value)}
-            />
-            <NumberField  label="Duracion"
-            
-            placeholder="Ingrese la Duracion de la cancion"
-            aria-label="Nombre la Duracion de la cancion"
+          />
+          <NumberField label="Duracion (segundos)"
+            placeholder="Ingrese la duracion de la cancion en segundos"
+            aria-label="Duracion de la cancion"
             value={duracion.value}
             onValueChanged={(evt) => (duracion.value = evt.detail.value)}
           />
-          <TextField label="Link de la cancion" 
+          <TextField label="Link de la cancion (URL)"
             placeholder="Ingrese el link de la cancion"
-            aria-label="Nombre el link de la cancion"
+            aria-label="Link de la cancion"
             value={url.value}
             onValueChanged={(evt) => (url.value = evt.detail.value)}
           />
         </VerticalLayout>
       </Dialog>
       <Button
-            onClick={() => {
-              dialogOpened.value = true;
-            }}
-          >
-            Agregar
-          </Button>
+        onClick={() => {
+          dialogOpened.value = true;
+        }}
+      >
+        Agregar
+      </Button>
     </>
   );
 }
 
-//GUARDAR ARTISTA
-const ArtistaEntryFormUpdate = function(props: ArtistaEntryFormPropsUpdate){//useCallback((props: ArtistaEntryFormPropsUpdate,{ item: art }: { item: Artista }) => {
-  console.log(props);
-  let pais = useSignal<String[]>([]);
+type CancionEntryFormUpdateProps = {
+  arguments: Cancion;
+  onCancionUpdated?: () => void;
+};
+
+function CancionEntryFormUpdate(props: CancionEntryFormUpdateProps): JSX.Element {
+  const dialogOpened = useSignal<boolean>(false);
+
+  const nombre = useSignal<string>(props.arguments.nombre ?? '');
+  const genero = useSignal<string>(props.arguments.id_genero?.toString() ?? '');
+  const album = useSignal<string>(props.arguments.id_album?.toString() ?? '');
+  const duracion = useSignal<string>(props.arguments.duracion?.toString() ?? '');
+  const url = useSignal<string>(props.arguments.url ?? '');
+  const tipo = useSignal<string>(props.arguments.tipo?.toString() ?? '');
+
   useEffect(() => {
-    ArtistaService.listCountry().then(data =>
-      pais.value = (data ?? []).filter((item): item is string => typeof item === 'string')
+    nombre.value = props.arguments.nombre ?? '';
+    genero.value = props.arguments.id_genero?.toString() ?? '';
+    album.value = props.arguments.id_album?.toString() ?? '';
+    duracion.value = props.arguments.duracion?.toString() ?? '';
+    url.value = props.arguments.url ?? '';
+    tipo.value = props.arguments.tipo?.toString() ?? '';
+  }, [props.arguments]);
+
+  const listaGenero = useSignal<{ label: string, value: string }[]>([]);
+  useEffect(() => {
+    CancionServices.listGeneroCombo().then(data => {
+      listaGenero.value = (data ?? []).map(item => ({
+        label: String(item?.label ?? ''),
+        value: String(item?.value ?? '')
+      }));
+    });
+  }, []);
+
+  const listaAlbum = useSignal<{ label: string, value: string }[]>([]);
+  useEffect(() => {
+    CancionServices.listAlbumCombo().then(data => {
+      listaAlbum.value = (data ?? []).map(item => ({
+        label: String(item?.label ?? ''),
+        value: String(item?.value ?? '')
+      }));
+    });
+  }, []);
+
+  const listaTipo = useSignal<string[]>([]);
+  useEffect(() => {
+    CancionServices.listTipo().then(data =>
+      listaTipo.value = (data ?? []).filter((item): item is string => typeof item === 'string')
     );
   }, []);
-  const nombre = useSignal(props.arguments.nombres);
-  const nacionalidad = useSignal(props.arguments.nacionalidad);
-  const createArtista = async () => {
-    try {
-      if (nombre.value.trim().length > 0 && nacionalidad.value.trim().length > 0) {
-        await ArtistaService.aupdateArtista(props.arguments.id, nombre.value, nacionalidad.value);
-        if (props.arguments.onArtistaUpdated) {
-          props.arguments.onArtistaUpdated();
-        }
-        nombre.value = '';
-        nacionalidad.value = '';
-        dialogOpened.value = false;
-        Notification.show('Artista creado', { duration: 5000, position: 'bottom-end', theme: 'success' });
-      } else {
-        Notification.show('No se pudo crear, faltan datos', { duration: 5000, position: 'top-center', theme: 'error' });
-      }
 
-    } catch (error) {
+  const updateCancion = async (): Promise<void> => {
+    try {
+      const idGeneroNum = parseInt(genero.value || '0');
+      const idAlbumNum = parseInt(album.value || '0');
+      const duracionNum = parseInt(duracion.value || '0');
+
+      await CancionServices.update(
+        props.arguments.id ?? 0,
+        nombre.value,
+        idGeneroNum,
+        duracionNum,
+        url.value,
+        tipo.value,
+        idAlbumNum
+      );
+
+      if (props.onCancionUpdated) {
+        props.onCancionUpdated();
+      }
+      dialogOpened.value = false;
+      Notification.show('Cancion actualizada con exito', { duration: 5000, position: 'bottom-end', theme: 'success' });
+    } catch (error: unknown) {
       console.log(error);
       handleError(error);
+      Notification.show((error as Error)?.message || 'Error desconocido al actualizar la cancion', { duration: 5000, position: 'top-center', theme: 'error' });
     }
   };
-  
-  
-  const dialogOpened = useSignal(false);
+
   return (
     <>
       <Dialog
         modeless
-        headerTitle="Actualizar artista"
+        headerTitle="Actualizar Cancion"
         opened={dialogOpened.value}
-        onOpenedChanged={({ detail }) => {
+        onOpenedChanged={({ detail }: { detail: { value: boolean } }) => {
           dialogOpened.value = detail.value;
         }}
         footer={
@@ -217,91 +271,249 @@ const ArtistaEntryFormUpdate = function(props: ArtistaEntryFormPropsUpdate){//us
                 dialogOpened.value = false;
               }}
             >
-              Candelar
+              Cancelar
             </Button>
-            <Button onClick={createArtista} theme="primary">
-              Registrar
+            <Button onClick={updateCancion} theme="primary">
+              Actualizar
             </Button>
-            
           </>
         }
       >
         <VerticalLayout style={{ alignItems: 'stretch', width: '18rem', maxWidth: '100%' }}>
-          <TextField label="Nombre del artista" 
-            placeholder="Ingrese el nombre del artista"
-            aria-label="Nombre del artista"
+          <TextField label="Nombre de la cancion"
+            placeholder="Ingrese el nombre de la cancion"
+            aria-label="Nombre de la cancion"
             value={nombre.value}
             onValueChanged={(evt) => (nombre.value = evt.detail.value)}
           />
-          <ComboBox label="Nacionalidad" 
-            items={pais.value}
-            placeholder='Seleccione un pais'
-            aria-label='Seleccione un pais de la lista'
-            value={nacionalidad.value}
-            defaultValue={nacionalidad.value}
-            
-            
-            onValueChanged={(evt) => (nacionalidad.value = evt.detail.value)}
-            />
+          <ComboBox label="Genero"
+            items={listaGenero.value}
+            placeholder='Seleccione un genero'
+            itemLabelPath="label"
+            itemValuePath="value"
+            value={genero.value}
+            onValueChanged={(evt) => (genero.value = evt.detail.value)}
+          />
+          <ComboBox label="Album"
+            items={listaAlbum.value}
+            placeholder='Seleccione un album'
+            itemLabelPath="label"
+            itemValuePath="value"
+            value={album.value}
+            onValueChanged={(evt) => (album.value = evt.detail.value)}
+          />
+          <ComboBox label="Tipo"
+            items={listaTipo.value}
+            placeholder='Seleccione un tipo de archivo'
+            value={tipo.value}
+            onValueChanged={(evt) => (tipo.value = evt.detail.value)}
+          />
+          <NumberField label="Duracion (segundos)"
+            placeholder="Ingrese la duracion de la cancion en segundos"
+            aria-label="Duracion de la cancion"
+            value={duracion.value}
+            onValueChanged={(evt) => (duracion.value = evt.detail.value)}
+          />
+          <TextField label="Link de la cancion (URL)"
+            placeholder="Ingrese el link de la cancion"
+            aria-label="Link de la cancion"
+            value={url.value}
+            onValueChanged={(evt) => (url.value = evt.detail.value)}
+          />
         </VerticalLayout>
       </Dialog>
       <Button
-            onClick={() => {
-              dialogOpened.value = true;
-            }}
-          >
-            Editar  
-          </Button>
+        onClick={() => {
+          dialogOpened.value = true;
+        }}
+      >
+        Editar
+      </Button>
     </>
   );
-};
+}
 
+const dateFormatter = new Intl.DateTimeFormat('es-ES', {
+  dateStyle: 'medium',
+});
 
-//LISTA DE ARTISTAS
-export default function CancionView() {
-  
-  const dataProvider = useDataProvider<Artista>({
-    list: async () => {
+export default function CancionView(): JSX.Element {
+  const [items, setItems] = useState<Record<string, unknown>[]>([]);
+
+  const callData = async (): Promise<void> => {
+    try {
       const data = await CancionServices.listCancion();
-      return (data ?? []).filter(item => item !== undefined) as Artista[];
-    },
-  });
+      setItems(
+        (data ?? [])
+          .filter((item): item is Record<string, string | undefined> => item !== undefined)
+          .map(item => ({
+            id: (item.id as number | string | undefined) ? parseInt(item.id as string) : undefined,
+            nombre: item.nombre as string | undefined,
+            id_genero: (item.id_genero as number | string | undefined) ? parseInt(item.id_genero as string) : undefined,
+            duracion: (item.duracion as number | string | undefined) ? parseInt(item.duracion as string) : undefined,
+            url: item.url as string | undefined,
+            tipo: item.tipo as any,
+            id_album: (item.id_album as number | string | undefined) ? parseInt(item.id_album as string) : undefined,
+            genero: item.genero as string | undefined,
+            album: item.album as string | undefined 
+          })) as Cancion[]);
+    } catch (error) {
+      console.error("Error al cargar datos de canciones:", error);
+      handleError(error);
+      Notification.show('Error al cargar la lista de canciones', { duration: 5000, position: 'top-center', theme: 'error' });
+    }
+  };
 
-  function indexLink({ item}: { item: Artista }) {
-   
+  useEffect(() => {
+    callData();
+  }, []);
+
+  const order = async (event: GridSortColumnDirectionChangedEvent, columnId: string): Promise<void> => {
+    const direction = event.detail.value;
+    const dir = (direction === 'asc') ? 1 : 2;
+
+    try {
+      let result;
+      result = await CancionServices.order(columnId, dir);
+      setItems((result ?? []).filter((item): item is Cancion => item !== undefined)
+        .map(item => ({
+          id: (item.id as number | string | undefined) ? parseInt(item.id as string) : undefined,
+          nombre: item.nombre as string | undefined,
+          id_genero: (item.id_genero as number | string | undefined) ? parseInt(item.id_genero as string) : undefined,
+          duracion: (item.duracion as number | string | undefined) ? parseInt(item.duracion as string) : undefined,
+          url: item.url as string | undefined,
+          tipo: item.tipo as any,
+          id_album: (item.id_album as number | string | undefined) ? parseInt(item.id_album as string) : undefined,
+          genero: item.genero as string | undefined,
+          album: item.album as string | undefined 
+        })) as Cancion[]);
+    } catch (error) {
+      console.error("Error al ordenar canciones:", error);
+      handleError(error);
+      Notification.show('Error al ordenar canciones', { duration: 5000, position: 'top-center', theme: 'error' });
+    }
+  };
+
+  function link({ item }: { item: Cancion }): JSX.Element {
     return (
       <span>
-        <ArtistaEntryFormUpdate arguments={item} onArtistaUpdated={dataProvider.refresh}>
-          
-          </ArtistaEntryFormUpdate> 
+        <CancionEntryFormUpdate arguments={item} onCancionUpdated={callData} />
       </span>
     );
   }
 
-  function indexIndex({model}:{model:GridItemModel<Artista>}) {
+  function index({ model }: { model: GridItemModel<Cancion> }): JSX.Element {
     return (
       <span>
-        {model.index + 1} 
+        {model.index + 1}
       </span>
     );
   }
+
+  const criterio = useSignal('');
+  const texto = useSignal('');
+  const itemSelect = [
+    { label: 'Nombre', value: 'nombre' },
+    { label: 'Album', value: 'album' }, 
+    { label: 'Genero', value: 'genero' }, 
+    { label: 'Duracion', value: 'duracion' }, 
+    { label: 'Tipo', value: 'tipo' },
+  ];
+
+  const search = async (): Promise<void> => {
+    try {
+      const searchType = 3;
+
+      const result = await CancionServices.search(criterio.value, texto.value, searchType);
+      setItems((result ?? []).filter((item): item is Cancion => item !== undefined)
+        .map(item => ({
+          id: (item.id as number | string | undefined) ? parseInt(item.id as string) : undefined,
+          nombre: item.nombre as string | undefined,
+          id_genero: (item.id_genero as number | string | undefined) ? parseInt(item.id_genero as string) : undefined,
+          duracion: (item.duracion as number | string | undefined) ? parseInt(item.duracion as string) : undefined,
+          url: item.url as string | undefined,
+          tipo: item.tipo as any,
+          id_album: (item.id_album as number | string | undefined) ? parseInt(item.id_album as string) : undefined,
+          genero: item.genero as string | undefined,
+          album: item.album as string | undefined 
+        })) as Cancion[]);
+
+      criterio.value = '';
+      texto.value = '';
+      Notification.show('Busqueda realizada', { duration: 5000, position: 'bottom-end', theme: 'success' });
+    } catch (error) {
+      console.error("Error en la busqueda:", error); 
+      handleError(error);
+      Notification.show('Error al realizar la busqueda', { duration: 5000, position: 'top-center', theme: 'error' });
+    }
+  };
+
+  const albumBuscado = useSignal('');
+
+  const searchAlbum = async (): Promise<void> => {
+    try {
+      const result = await CancionServices.searchAlbum(albumBuscado.value);
+      setItems((result ?? []).filter((item): item is Cancion => item !== undefined)
+        .map(item => ({
+          id: (item.id as number | string | undefined) ? parseInt(item.id as string) : undefined,
+          nombre: item.nombre as string | undefined,
+          id_genero: (item.id_genero as number | string | undefined) ? parseInt(item.id_genero as string) : undefined,
+          duracion: (item.duracion as number | string | undefined) ? parseInt(item.duracion as string) : undefined,
+          url: item.url as string | undefined,
+          tipo: item.tipo as any,
+          id_album: (item.id_album as number | string | undefined) ? parseInt(item.id_album as string) : undefined,
+          genero: item.genero as string | undefined,
+          album: item.album as string | undefined 
+        })) as Cancion[]);
+
+      Notification.show('Busqueda por album realizada', { duration: 3000, theme: 'success' }); 
+    } catch (e: unknown) {
+      console.error("Error en la busqueda por album:", e); // Sin tilde
+      handleError(e);
+      Notification.show('Error en la busqueda por album', { duration: 3000, theme: 'error' }); 
+    }
+  };
 
   return (
-
     <main className="w-full h-full flex flex-col box-border gap-s p-m">
-
-      <ViewToolbar title="Lista de artista">
+      <ViewToolbar title="Lista de Canciones">
         <Group>
-          <ArtistaEntryForm onArtistaCreated={dataProvider.refresh}/>
+          <CancionEntryForm onCancionCreated={callData} />
         </Group>
       </ViewToolbar>
-      <Grid dataProvider={dataProvider.dataProvider}>
-        <GridColumn  renderer={indexIndex} header="Nro" />
-        <GridColumn path="nombre" header="Cancion" />
-        <GridColumn path="genero" header="Genero"/>
-          <GridColumn path="albun" header="Album"></GridColumn>
-        
-        <GridColumn header="Acciones" renderer={indexLink}/>
+      <HorizontalLayout theme="spacing">
+        <Select items={itemSelect}
+          value={criterio.value}
+          onValueChanged={(evt) => (criterio.value = evt.detail.value)}
+          placeholder="Seleccione un criterio">
+        </Select>
+
+        <TextField
+          placeholder="Buscar..."
+          style={{ width: '50%' }}
+          value={texto.value}
+          onValueChanged={(evt) => (texto.value = evt.detail.value)}
+        >
+          <Icon slot="prefix" icon="vaadin:search" />
+        </TextField>
+        <Button onClick={search} theme="primary">
+          BUSCAR
+        </Button>
+        <Button onClick={callData} theme="tertiary">
+          Mostrar todo
+        </Button>
+      </HorizontalLayout>
+      
+
+      <Grid items={items}>
+        <GridColumn header="Nro" renderer={index} />
+        <GridSortColumn path="nombre" header="Nombre de la cancion" onDirectionChanged={(e) => order(e, 'nombre')} />
+        <GridSortColumn path="album" header="Album" onDirectionChanged={(e) => order(e, 'album')} /> {}
+        <GridSortColumn path="genero" header="Genero" onDirectionChanged={(e) => order(e, 'genero')} /> {}
+        <GridSortColumn path="url" header="URL" onDirectionChanged={(e) => order(e, 'url')} />
+        <GridSortColumn path="duracion" header="Duracion (segundos)" onDirectionChanged={(e) => order(e, 'duracion')} /> {}
+        <GridSortColumn path="tipo" header="Tipo de archivo" onDirectionChanged={(e) => order(e, 'tipo')} />
+        <GridColumn header="Acciones" renderer={link} />
       </Grid>
     </main>
   );

@@ -8,8 +8,8 @@ class ArtistaModel<T extends Artista_1 = Artista_1> extends ObjectModel_1<T> {
     get nombres(): StringModel_1 {
         return this[_getPropertyModel_1]("nombres", (parent, key) => new StringModel_1(parent, key, true, { meta: { javaType: "java.lang.String" } }));
     }
-    get nacionidad(): StringModel_1 {
-        return this[_getPropertyModel_1]("nacionidad", (parent, key) => new StringModel_1(parent, key, true, { meta: { javaType: "java.lang.String" } }));
+    get nacionalidad(): StringModel_1 {
+        return this[_getPropertyModel_1]("nacionalidad", (parent, key) => new StringModel_1(parent, key, true, { meta: { javaType: "java.lang.String" } }));
     }
 }
 export default ArtistaModel;

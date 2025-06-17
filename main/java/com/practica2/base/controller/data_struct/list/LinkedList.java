@@ -25,11 +25,9 @@ public class LinkedList<E> {
     private Node<E> getNode(Integer pos) {
         if (isEmpty()) {
             throw new ArrayIndexOutOfBoundsException("List empty");
-            // System.out.println("Lista vacia");
-            // return null;
+            
         } else if (pos < 0 || pos >= length) {
-            // System.out.println("Fuera de rango");
-            // return null;
+            
             throw new ArrayIndexOutOfBoundsException("Index out range");
         } else if (pos == 0) {
             return head;
@@ -64,23 +62,7 @@ public class LinkedList<E> {
 
     public E get(Integer pos) {
         return getNode(pos).getData();
-        /*
-         * if (isEmpty()) {
-         * throw new ArrayIndexOutOfBoundsException("List empty");
-         * // System.out.println("Lista vacia");
-         * // return null;
-         * } else if (pos < 0 || pos >= length) {
-         * // System.out.println("Fuera de rango");
-         * // return null;
-         * throw new ArrayIndexOutOfBoundsException("Index out range");
-         * }else if (pos == 0) {
-         * return getDataFirst();
-         * } else if (length.intValue() == pos.intValue()) {
-         * return getDataLast();
-         * } else {
-         * return getNode(pos).getData();
-         * }
-         */
+        
     }
 
     private void addFirst(E data) {
@@ -235,7 +217,7 @@ public class LinkedList<E> {
     }
 
     public static void main(String[] args) {
-        // StackImplementation<Integer> si = new StackImplementation<>(5);
+        
         Stack<Integer> stack = new Stack<>(5);
 
     }
